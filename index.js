@@ -1,57 +1,31 @@
-// Inquirer prompt
-// Ask for team manager name
-// Employee ID
-// Email address
-// Office number
-// Add engineer or intern?
-// If engineer,
-// Then prompted to enter name, ID, email, GitHub username
-// If intern,
-// Then prompted to enter
-// Return to menu
-// Write test for each part of code
-// Optional validate input
-
-// Classes: Employee, Manager, Engineer, Intern
-// Employee properties and methods: name, id, email, getName(), getId(), getEmail(), getRole() - returns 'Employee'
-// Manager extends Employee: officeNumber, getRole() - overridden to return 'Manager'
-// Engineer extends Employee: github (username), getGithub(), getRole() - overridden to return 'Engineer'
-// Intern extends employee: school, getSchool(), getrole() - overridden to return 'Intern'
-
-// Directory structure:
-// Tests - tests
-// Dist - rendered output (HTML) and CSS
-// Lib - classes
-// Src - template helper code
-// .gitignore
-// index.js
-// package.json
-
 const inquirer = require('inquirer');
 const fs = require('fs');
-const generateHTML = require('./dist/generateHTML.js');
+const generateHTML = require('./src/generateHTML.js');
+const Manager = require('./lib/manager.js');
+const Engineer = require('./lib/engineer.js');
+const Intern = require('./lib/intern.js');
 
 let roster = [];
 
 const managerQuestions = [
     {
         type: 'input',
-        name: 'manager-name',
+        name: 'managerName',
         message: 'Team manager name:',
     },
     {
         type: 'input',
-        name: 'manager-id',
+        name: 'managerId',
         message: 'ID:'
     },
     {
         type: 'input',
-        name: 'manager-email',
+        name: 'managerEmail',
         message: 'Email address:',
     },
     {
         type: 'input',
-        name: 'office-number',
+        name: 'officeNumber',
         message: 'Office number:',
     },
 ];
@@ -59,17 +33,17 @@ const managerQuestions = [
 const engineerQuestions = [
     {
         type: 'input',
-        name: 'engineer-name',
+        name: 'engineerName',
         message: 'Name:',
     },
     {
         type: 'input',
-        name: 'engineer-id',
-        message: 'Email:',
+        name: 'engineerId',
+        message: 'ID:',
     },
     {
         type: 'input',
-        name: 'engineer-email',
+        name: 'engineerEmail',
         message: 'Email:',
     },
     {
@@ -82,17 +56,17 @@ const engineerQuestions = [
 const internQuestions = [
     {
         type: 'input',
-        name: 'intern-name',
+        name: 'internName',
         message: 'Name:',
     },
     {
         type: 'input',
-        name: 'intern-id',
-        message: 'Email:',
+        name: 'internId',
+        message: 'ID:',
     },
     {
         type: 'input',
-        name: 'intern-email',
+        name: 'internEmail',
         message: 'Email:',
     },
     {
@@ -102,50 +76,65 @@ const internQuestions = [
     }
 ];
 
-const addEmployee = [
+const addEmployeeQ = [
     {
         type: 'list',
-        name: 'engineer-or-intern',
+        name: 'engineerOrIntern',
         message: 'Add employee:',
         choices: ['Engineer', 'Intern', 'Finish building team'],
-        when(answers){
-            switch(answers) {
-                case 'Engineer':
-                    return addEngineer();
-                    break;
-                case 'Intern':
-                    return addIntern();
-                    break;
-                case 'Finish building team':
-                    return generateHTML();
-                    break;
-             }
-            }
-    },
+    }
 ];
 
+function addManager() {
+    inquirer
+        .prompt(managerQuestions).then((answers) => {
+            const manager = new Manager(answers.managerName, answers.managerId, answers.managerEmail, answers.officeNumber);
+            roster.push(manager);
+            addEmployee();
+        });
+}
 
-function addEngineer {
+function addEngineer() {
     inquirer
         .prompt(engineerQuestions).then((answers) => {
-
+            const engineer = new Engineer(answers.engineerName, answers.engineerId, answers.engineerEmail, answers.github);
+            roster.push(engineer);
+            addEmployee();
         })
 }
 
-function init() { 
+function addIntern() {
     inquirer
-        .prompt(questions)
-        .then((answers) => {
-            const readmeContent = generateMarkdown(answers);
-            writeToFile('index.html', answers);
-            
-            function writeToFile(fileName, data) {
-                fs.writeFile('index.html', readmeContent, (err) =>
-                err ? console.log(err) : console.log('Successfully created file!')
-                );
-            }
+        .prompt(internQuestions).then((answers) => {
+            const intern = new Intern(answers.internName, answers.internId, answers.internEmail, answers.school);
+            roster.push(intern);
+            addEmployee();
         })
-
 }
 
-init();
+function addEmployee() {
+    inquirer
+        .prompt(addEmployeeQ).then((answers) => {
+            switch (answers.engineerOrIntern) {
+                case 'Engineer':
+                    addEngineer();
+                    break;
+                case 'Intern':
+                    addIntern();
+                    break;
+                case 'Finish building team':
+                    const HTML = generateHTML(roster);
+                    writeToFile('dist/index.html', HTML);
+                    break;
+            }
+
+        });
+}
+
+function writeToFile(fileName, data) {
+    fs.writeFile(fileName, data, (err) =>
+        err ? console.log(err) : console.log('Successfully created file!')
+    );
+}
+
+addManager()
